@@ -47,30 +47,28 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA82Q522MlSXJ36x9ZsUEf2KPN16ibnP-s',
-    appId: '1:15157883302:android:f8dadf1d66543de2e61f67',
-    messagingSenderId: '15157883302',
-    projectId: 'chatapp-d3786',
-    storageBucket: 'chatapp-d3786.firebasestorage.app',
+    apiKey: 'AIzaSyBrYsJPQgZDxlvMdT-HA1QY_YuUwqP8Dm0',
+    appId: '1:842844797997:android:2be214fa88fc80f0dd4ca4',
+    messagingSenderId: '842844797997',
+    projectId: 'ping-chat-4aa80',
+    storageBucket: 'ping-chat-4aa80.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyB-os84YZWxrrsXkNvtcbsBF2N8Rg0p51A',
-    appId: '1:15157883302:ios:753c540b1b448da1e61f67',
-    messagingSenderId: '15157883302',
-    projectId: 'chatapp-d3786',
-    storageBucket: 'chatapp-d3786.firebasestorage.app',
+    apiKey: 'AIzaSyBrYsJPQgZDxlvMdT-HA1QY_YuUwqP8Dm0',
+    appId: '1:842844797997:android:2be214fa88fc80f0dd4ca4',
+    messagingSenderId: '842844797997',
+    projectId: 'ping-chat-4aa80',
+    storageBucket: 'ping-chat-4aa80.firebasestorage.app',
     iosBundleId: 'com.harshRajpurohit.weChat',
   );
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBoH5xLzUnPdfuC1kguGOowGRsw-x2ItWU',
-    appId: '1:15157883302:web:2c4a43771995d85be61f67',
-    messagingSenderId: '15157883302',
-    projectId: 'chatapp-d3786',
-    authDomain: 'chatapp-d3786.firebaseapp.com',
-    storageBucket: 'chatapp-d3786.firebasestorage.app',
-    measurementId: 'G-C2TZC44FL2',
+    apiKey: 'AIzaSyBrYsJPQgZDxlvMdT-HA1QY_YuUwqP8Dm0',
+    appId: '1:842844797997:android:2be214fa88fc80f0dd4ca4',
+    messagingSenderId: '842844797997',
+    projectId: 'ping-chat-4aa80',
+    authDomain: 'ping-chat-4aa80.firebaseapp.com',
+    storageBucket: 'ping-chat-4aa80.firebasestorage.app',
   );
-
 }
