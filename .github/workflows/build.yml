@@ -30,8 +30,8 @@ jobs:
         run: flutter pub get
         
       - name: Build APK
-        # A flag --android-skip-build-dependency-validation ignora o erro de versão do Gradle 
-        # detectado pelo plugin do Flutter, permitindo o prosseguimento do build.
+        # O comando abaixo usa a flag de skip para evitar a checagem rígida de versão 
+        # do plugin do Flutter, sem depender do arquivo gradlew na raiz.
         run: flutter build apk --debug --android-skip-build-dependency-validation
         
       - name: Upload APK
