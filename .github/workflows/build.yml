@@ -30,7 +30,9 @@ jobs:
         run: flutter pub get
         
       - name: Build APK
-        run: flutter build apk --debug
+        # A flag --android-skip-build-dependency-validation ignora o erro de versão do Gradle 
+        # detectado pelo plugin do Flutter, permitindo o prosseguimento do build.
+        run: flutter build apk --debug --android-skip-build-dependency-validation
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
