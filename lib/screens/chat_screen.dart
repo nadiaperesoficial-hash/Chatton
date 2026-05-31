@@ -3,10 +3,9 @@ import 'dart:io';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sound/flutter_sound.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
 
 import '../api/apis.dart';
 import '../helper/my_date_util.dart';
@@ -31,9 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _showEmoji = false, _isUploading = false;
   bool _isRecording = false;
   bool _hasText = false;
-  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
-  bool _recorderReady = false;
-  String? _recordingPath;
+  final _recorder = AudioRecorder();
 
   @override
   void initState() {
@@ -41,20 +38,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _textController.addListener(() {
       setState(() => _hasText = _textController.text.isNotEmpty);
     });
-    _initRecorder();
-  }
-
-  Future<void> _initRecorder() async {
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) return;
-    await _recorder.openRecorder();
-    setState(() => _recorderReady = true);
   }
 
   @override
   void dispose() {
     _textController.dispose();
-    _recorder.closeRecorder();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -383,53 +372,70 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
-    if (!_recorderReady) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Permissão de microfone negada')),
-        );
+    try {
+      final hasPermission = await _recorder.hasPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Permissão de microfone negada')),
+          );
+        }
+        return;
       }
-      return;
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
+      setState(() => _isRecording = true);
+      log('Recording started: $path');
+    } catch (e) {
+      log('startRecordingError: $e');
     }
-    final dir = await getTemporaryDirectory();
-    _recordingPath =
-        '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
-    await _recorder.startRecorder(
-      toFile: _recordingPath,
-      codec: Codec.aacADTS,
-    );
-    setState(() => _isRecording = true);
   }
 
   Future<void> _stopRecording() async {
-    final path = await _recorder.stopRecorder();
-    setState(() => _isRecording = false);
+    try {
+      final path = await _recorder.stop();
+      setState(() => _isRecording = false);
+      log('Recording stopped: $path');
 
-    if (path == null) {
-      log('Audio path is null');
-      return;
+      if (path == null) {
+        log('Audio path null');
+        return;
+      }
+
+      final file = File(path);
+      if (!await file.exists()) {
+        log('Audio file not found');
+        return;
+      }
+
+      final size = await file.length();
+      log('Audio size: $size bytes');
+
+      if (size < 1000) {
+        log('Audio too short');
+        return;
+      }
+
+      setState(() => _isUploading = true);
+      await APIs.sendChatAudio(widget.user, file);
+      setState(() => _isUploading = false);
+      log('Audio sent successfully');
+    } catch (e) {
+      log('stopRecordingError: $e');
+      setState(() {
+        _isRecording = false;
+        _isUploading = false;
+      });
     }
-
-    final file = File(path);
-    if (!await file.exists()) {
-      log('Audio file does not exist: $path');
-      return;
-    }
-
-    final size = await file.length();
-    log('Audio file size: $size bytes');
-
-    if (size < 100) {
-      log('Audio too short, ignoring');
-      return;
-    }
-
-    // Aguarda arquivo fechar completamente
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() => _isUploading = true);
-    await APIs.sendChatAudio(widget.user, file);
-    setState(() => _isUploading = false);
   }
 }
