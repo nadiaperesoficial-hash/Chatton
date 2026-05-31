@@ -1,3 +1,5 @@
+import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -79,7 +81,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           fontSize: 15, color: Colors.black87),
                       decoration: InputDecoration(
                         hintText: 'E-mail',
-                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        hintStyle:
+                            TextStyle(color: Colors.grey.shade400),
                         prefixIcon: Icon(Icons.mail_outline_rounded,
                             color: Colors.orange.shade600),
                         border: InputBorder.none,
@@ -100,7 +103,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF2D55).withOpacity(0.4),
+                            color:
+                                const Color(0xFFFF2D55).withOpacity(0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -167,7 +171,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               gradient: const LinearGradient(
                                 colors: [
                                   Color(0xFFFFB347),
-                                  Color(0xFFFF2D55)
+                                  Color(0xFFFF2D55),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(30),
@@ -204,13 +208,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
     setState(() => _isLoading = true);
-    // TODO: FirebaseAuth.instance.sendPasswordResetEmail(
-    //   email: _emailController.text.trim(),
-    // );
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _isLoading = false;
-      _sent = true;
-    });
+    try {
+      await APIs.sendPasswordReset(_emailController.text.trim());
+      if (mounted) setState(() => _sent = true);
+    } on FirebaseAuthException catch (e) {
+      log('ResetError: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Erro ao enviar e-mail')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }
