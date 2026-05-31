@@ -1,5 +1,9 @@
+import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../home_screen.dart';
+import '../api/apis.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
   const PhoneLoginScreen({super.key});
@@ -127,8 +131,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
                                 fontSize: 15, color: Colors.black87),
                             decoration: InputDecoration(
                               hintText: '(00) 00000-0000',
-                              hintStyle:
-                                  TextStyle(color: Colors.grey.shade400),
+                              hintStyle: TextStyle(
+                                  color: Colors.grey.shade400),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 18),
@@ -150,7 +154,8 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF2D55).withOpacity(0.4),
+                            color:
+                                const Color(0xFFFF2D55).withOpacity(0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -189,16 +194,28 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
       return;
     }
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const OtpScreen(verificationId: 'dummy'),
-        ),
-      );
-    }
+    await APIs.verifyPhone(
+      phoneNumber: '+55$phone',
+      onCodeSent: (verificationId) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  OtpScreen(verificationId: verificationId),
+            ),
+          );
+        }
+      },
+      onError: (error) {
+        log('PhoneError: $error');
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
+        );
+      },
+    );
   }
 }
 
@@ -287,7 +304,8 @@ class _OtpScreenState extends State<OtpScreen> {
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF2D55).withOpacity(0.4),
+                          color:
+                              const Color(0xFFFF2D55).withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -374,7 +392,26 @@ class _OtpScreenState extends State<OtpScreen> {
       return;
     }
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+    try {
+      await APIs.verifyOtp(
+        verificationId: widget.verificationId,
+        smsCode: code,
+      );
+      await APIs.getSelfInfo();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      log('OtpError: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Código inválido')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }
