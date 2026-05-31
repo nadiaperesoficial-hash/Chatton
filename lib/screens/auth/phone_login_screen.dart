@@ -39,129 +39,155 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Color(0xFF075E54),
+      statusBarIconBrightness: Brightness.light,
+    ));
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFB347),
-              Color(0xFFFF6B6B),
-              Color(0xFFFF2D55),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeIn,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.black54),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Seu\nTelefone',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                      letterSpacing: -1,
-                      height: 1.1,
+      backgroundColor: Colors.white,
+      body: FadeTransition(
+        opacity: _fadeIn,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header verde
+              Container(
+                width: double.infinity,
+                color: const Color(0xFF075E54),
+                padding: const EdgeInsets.only(
+                    top: 60, bottom: 40),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.phone_outlined,
+                        size: 50,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Vamos enviar um código de verificação\npara o seu número.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black.withOpacity(0.5),
-                      height: 1.5,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Seu Telefone',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 36),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Verificação',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF075E54),
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 18),
-                          child: Row(
-                            children: [
-                              const Text('🇧🇷',
-                                  style: TextStyle(fontSize: 20)),
-                              const SizedBox(width: 6),
-                              Text('+55',
+                    const SizedBox(height: 8),
+                    Text(
+                      'Vamos enviar um código SMS para confirmar seu número.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Campo telefone
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
+                            child: Row(
+                              children: [
+                                const Text('🇧🇷',
+                                    style: TextStyle(fontSize: 20)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '+55',
                                   style: TextStyle(
-                                    color: Colors.orange.shade700,
+                                    color: const Color(0xFF075E54),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
-                                  )),
-                              const SizedBox(width: 4),
-                              Icon(Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.orange.shade700,
-                                  size: 20),
-                            ],
-                          ),
-                        ),
-                        Container(
-                            width: 1,
-                            height: 28,
-                            color: Colors.grey.shade200),
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(11),
-                            ],
-                            style: const TextStyle(
-                                fontSize: 15, color: Colors.black87),
-                            decoration: InputDecoration(
-                              hintText: '(00) 00000-0000',
-                              hintStyle: TextStyle(
-                                  color: Colors.grey.shade400),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 18),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: Color(0xFF075E54),
+                                    size: 20),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _sendCode,
-                    child: Container(
-                      height: 58,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFB347), Color(0xFFFF2D55)],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                const Color(0xFFFF2D55).withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                          Container(
+                              width: 1,
+                              height: 28,
+                              color: Colors.grey.shade300),
+                          Expanded(
+                            child: TextField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(11),
+                              ],
+                              style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87),
+                              decoration: InputDecoration(
+                                hintText: '(00) 00000-0000',
+                                hintStyle: TextStyle(
+                                    color: Colors.grey.shade400),
+                                border: InputBorder.none,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 16),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      child: Center(
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _sendCode,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF075E54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         child: _isLoading
                             ? const CircularProgressIndicator(
                                 color: Colors.white)
@@ -169,16 +195,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
                                 'Enviar código',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 17,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -244,74 +270,87 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFB347),
-              Color(0xFFFF6B6B),
-              Color(0xFFFF2D55),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: Colors.black54),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Código\nRecebido?',
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black87,
-                    letterSpacing: -1,
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Digite os 6 dígitos enviados por SMS.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black.withOpacity(0.5),
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(6, (i) => _buildOtpBox(i)),
-                ),
-                const SizedBox(height: 36),
-                GestureDetector(
-                  onTap: _isLoading ? null : _verifyCode,
-                  child: Container(
-                    height: 58,
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              color: const Color(0xFF075E54),
+              padding:
+                  const EdgeInsets.only(top: 60, bottom: 40),
+              child: Column(
+                children: [
+                  Container(
+                    width: 90,
+                    height: 90,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFFB347), Color(0xFFFF2D55)],
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              const Color(0xFFFF2D55).withOpacity(0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
                     ),
-                    child: Center(
+                    child: const Icon(
+                      Icons.sms_outlined,
+                      size: 50,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Código SMS',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 28, vertical: 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Digite o código',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF075E54),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Digite os 6 dígitos enviados por SMS.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                        6, (i) => _buildOtpBox(i)),
+                  ),
+                  const SizedBox(height: 36),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed:
+                          _isLoading ? null : _verifyCode,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF075E54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(12),
+                        ),
+                      ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
                               color: Colors.white)
@@ -319,29 +358,29 @@ class _OtpScreenState extends State<OtpScreen> {
                               'Verificar',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 17,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Reenviar código',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w600,
+                  const SizedBox(height: 20),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        'Reenviar código',
+                        style: TextStyle(
+                          color: Color(0xFF075E54),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -366,10 +405,21 @@ class _OtpScreenState extends State<OtpScreen> {
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Colors.grey.shade100,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(12),
+            borderSide:
+                BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide:
+                BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+                color: Color(0xFF075E54), width: 2),
           ),
         ),
         onChanged: (val) {
@@ -384,10 +434,12 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Future<void> _verifyCode() async {
-    final code = _controllers.map((c) => c.text).join();
+    final code =
+        _controllers.map((c) => c.text).join();
     if (code.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Digite os 6 dígitos')),
+        const SnackBar(
+            content: Text('Digite os 6 dígitos')),
       );
       return;
     }
@@ -401,14 +453,17 @@ class _OtpScreenState extends State<OtpScreen> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(
+              builder: (_) => const HomeScreen()),
           (route) => false,
         );
       }
     } on FirebaseAuthException catch (e) {
       log('OtpError: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Código inválido')),
+        SnackBar(
+            content:
+                Text(e.message ?? 'Código inválido')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
