@@ -3,9 +3,10 @@ import 'dart:io';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../api/apis.dart';
 import '../helper/my_date_util.dart';
@@ -30,7 +31,8 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _showEmoji = false, _isUploading = false;
   bool _isRecording = false;
   bool _hasText = false;
-  final AudioRecorder _audioRecorder = AudioRecorder();
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  bool _recorderReady = false;
   String? _recordingPath;
 
   @override
@@ -39,12 +41,20 @@ class _ChatScreenState extends State<ChatScreen> {
     _textController.addListener(() {
       setState(() => _hasText = _textController.text.isNotEmpty);
     });
+    _initRecorder();
+  }
+
+  Future<void> _initRecorder() async {
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) return;
+    await _recorder.openRecorder();
+    setState(() => _recorderReady = true);
   }
 
   @override
   void dispose() {
     _textController.dispose();
-    _audioRecorder.dispose();
+    _recorder.closeRecorder();
     super.dispose();
   }
 
@@ -373,13 +383,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
-    final hasPermission =
-        await _audioRecorder.hasPermission();
-    if (!hasPermission) {
+    if (!_recorderReady) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Permissão de microfone negada')),
+              content:
+                  Text('Permissão de microfone negada')),
         );
       }
       return;
@@ -387,15 +396,15 @@ class _ChatScreenState extends State<ChatScreen> {
     final dir = await getTemporaryDirectory();
     _recordingPath =
         '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
-    await _audioRecorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc),
-      path: _recordingPath!,
+    await _recorder.startRecorder(
+      toFile: _recordingPath,
+      codec: Codec.aacADTS,
     );
     setState(() => _isRecording = true);
   }
 
   Future<void> _stopRecording() async {
-    final path = await _audioRecorder.stop();
+    final path = await _recorder.stopRecorder();
     setState(() => _isRecording = false);
     if (path != null) {
       final file = File(path);
