@@ -387,8 +387,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Permissão de microfone negada')),
+              content: Text('Permissão de microfone negada')),
         );
       }
       return;
@@ -406,11 +405,31 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _stopRecording() async {
     final path = await _recorder.stopRecorder();
     setState(() => _isRecording = false);
-    if (path != null) {
-      final file = File(path);
-      setState(() => _isUploading = true);
-      await APIs.sendChatAudio(widget.user, file);
-      setState(() => _isUploading = false);
+
+    if (path == null) {
+      log('Audio path is null');
+      return;
     }
+
+    final file = File(path);
+    if (!await file.exists()) {
+      log('Audio file does not exist: $path');
+      return;
+    }
+
+    final size = await file.length();
+    log('Audio file size: $size bytes');
+
+    if (size < 100) {
+      log('Audio too short, ignoring');
+      return;
+    }
+
+    // Aguarda arquivo fechar completamente
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() => _isUploading = true);
+    await APIs.sendChatAudio(widget.user, file);
+    setState(() => _isUploading = false);
   }
 }
