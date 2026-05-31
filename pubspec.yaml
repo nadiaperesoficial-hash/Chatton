@@ -61,8 +61,6 @@ dependencies:
   # Date Time Formatting
   intl: ^0.20.1
 
-  # For recording audio
-  mic_stream: ^0.7.2
   
   # For microphone permission
   permission_handler: ^11.3.1
