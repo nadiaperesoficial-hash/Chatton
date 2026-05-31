@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mic_stream/mic_stream.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 
 import '../api/apis.dart';
 import '../helper/my_date_util.dart';
@@ -30,7 +32,10 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _showEmoji = false, _isUploading = false;
   bool _isRecording = false;
   bool _hasText = false;
-  final _recorder = AudioRecorder();
+  StreamSubscription<Uint8List>? _micSubscription;
+  IOSink? _fileSink;
+  String? _recordingPath;
+  final List<Uint8List> _audioChunks = [];
 
   @override
   void initState() {
@@ -43,7 +48,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _recorder.dispose();
+    _micSubscription?.cancel();
+    _fileSink?.close();
     super.dispose();
   }
 
@@ -373,29 +379,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _startRecording() async {
     try {
-      final hasPermission = await _recorder.hasPermission();
-      if (!hasPermission) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Permissão de microfone negada')),
-          );
-        }
+      _audioChunks.clear();
+      final dir = await getTemporaryDirectory();
+      _recordingPath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.pcm';
+
+      final stream = await MicStream.microphone(
+        sampleRate: 16000,
+        channelConfig: ChannelConfig.CHANNEL_IN_MONO,
+        audioFormat: AudioFormat.ENCODING_PCM_16BIT,
+      );
+
+      if (stream == null) {
+        log('Mic stream null');
         return;
       }
-      final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-        ),
-        path: path,
-      );
+
+      _fileSink = File(_recordingPath!).openWrite();
+      _micSubscription = stream.listen((data) {
+        _audioChunks.add(data);
+        _fileSink?.add(data);
+      });
+
       setState(() => _isRecording = true);
-      log('Recording started: $path');
+      log('Recording started: $_recordingPath');
     } catch (e) {
       log('startRecordingError: $e');
     }
@@ -403,24 +410,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _stopRecording() async {
     try {
-      final path = await _recorder.stop();
+      await _micSubscription?.cancel();
+      await _fileSink?.close();
+      _micSubscription = null;
+      _fileSink = null;
       setState(() => _isRecording = false);
-      log('Recording stopped: $path');
 
-      if (path == null) {
-        log('Audio path null');
-        return;
-      }
+      if (_recordingPath == null) return;
 
-      final file = File(path);
+      final file = File(_recordingPath!);
       if (!await file.exists()) {
-        log('Audio file not found');
+        log('File not found');
         return;
       }
 
       final size = await file.length();
       log('Audio size: $size bytes');
-
       if (size < 1000) {
         log('Audio too short');
         return;
@@ -429,7 +434,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _isUploading = true);
       await APIs.sendChatAudio(widget.user, file);
       setState(() => _isUploading = false);
-      log('Audio sent successfully');
+      log('Audio sent');
     } catch (e) {
       log('stopRecordingError: $e');
       setState(() {
