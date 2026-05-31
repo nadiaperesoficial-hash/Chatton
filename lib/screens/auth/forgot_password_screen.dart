@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../api/apis.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -103,8 +104,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                const Color(0xFFFF2D55).withOpacity(0.4),
+                            color: const Color(0xFFFF2D55).withOpacity(0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
