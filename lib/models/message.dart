@@ -6,6 +6,7 @@ class Message {
     required this.type,
     required this.fromId,
     required this.sent,
+    this.isPlayed = false,
   });
 
   late final String toId;
@@ -14,14 +15,20 @@ class Message {
   late final String fromId;
   late final String sent;
   late final Type type;
+  late bool isPlayed;
 
   Message.fromJson(Map<String, dynamic> json) {
     toId = json['toId'].toString();
     msg = json['msg'].toString();
     read = json['read'].toString();
-    type = json['type'].toString() == Type.image.name ? Type.image : Type.text;
     fromId = json['fromId'].toString();
     sent = json['sent'].toString();
+    isPlayed = json['isPlayed'] == true;
+    type = json['type'].toString() == Type.image.name
+        ? Type.image
+        : json['type'].toString() == Type.audio.name
+            ? Type.audio
+            : Type.text;
   }
 
   Map<String, dynamic> toJson() {
@@ -32,12 +39,12 @@ class Message {
     data['type'] = type.name;
     data['fromId'] = fromId;
     data['sent'] = sent;
+    data['isPlayed'] = isPlayed;
     return data;
   }
 }
 
-enum Type { text, image }
-
+enum Type { text, image, audio }
 
 // ai message
 class AiMessage {
