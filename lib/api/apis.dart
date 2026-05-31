@@ -98,7 +98,7 @@ class APIs {
     return await auth.signInWithCredential(credential);
   }
 
-  // ─── Restante do código original ─────────────────────────────────────────
+  // ─── Firebase Messaging ──────────────────────────────────────────────────
 
   static Future<void> getFirebaseMessagingToken() async {
     await fMessaging.requestPermission();
@@ -124,7 +124,6 @@ class APIs {
       };
       const projectID = 'we-chat-75f13';
       final bearerToken = await NotificationAccessToken.getToken;
-      log('bearerToken: $bearerToken');
       if (bearerToken == null) return;
       var res = await post(
         Uri.parse(
@@ -142,6 +141,8 @@ class APIs {
     }
   }
 
+  // ─── User ────────────────────────────────────────────────────────────────
+
   static Future<bool> userExists() async {
     return (await firestore.collection('users').doc(user.uid).get()).exists;
   }
@@ -151,9 +152,7 @@ class APIs {
         .collection('users')
         .where('email', isEqualTo: email)
         .get();
-    log('data: ${data.docs}');
     if (data.docs.isNotEmpty && data.docs.first.id != user.uid) {
-      log('user exists: ${data.docs.first.data()}');
       firestore
           .collection('users')
           .doc(user.uid)
@@ -161,9 +160,8 @@ class APIs {
           .doc(data.docs.first.id)
           .set({});
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   static Future<void> getSelfInfo() async {
@@ -172,7 +170,6 @@ class APIs {
         me = ChatUser.fromJson(user.data()!);
         await getFirebaseMessagingToken();
         APIs.updateActiveStatus(true);
-        log('My Data: ${user.data()}');
       } else {
         await createUser().then((value) => getSelfInfo());
       }
@@ -207,11 +204,9 @@ class APIs {
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllUsers(
       List<String> userIds) {
-    log('\nUserIds: $userIds');
     return firestore
         .collection('users')
-        .where('id',
-            whereIn: userIds.isEmpty ? [''] : userIds)
+        .where('id', whereIn: userIds.isEmpty ? [''] : userIds)
         .snapshots();
   }
 
@@ -234,13 +229,8 @@ class APIs {
 
   static Future<void> updateProfilePicture(File file) async {
     final ext = file.path.split('.').last;
-    log('Extension: $ext');
     final ref = storage.ref().child('profile_pictures/${user.uid}.$ext');
-    await ref
-        .putFile(file, SettableMetadata(contentType: 'image/$ext'))
-        .then((p0) {
-      log('Data Transferred: ${p0.bytesTransferred / 1000} kb');
-    });
+    await ref.putFile(file, SettableMetadata(contentType: 'image/$ext'));
     me.image = await ref.getDownloadURL();
     await firestore
         .collection('users')
@@ -264,9 +254,12 @@ class APIs {
     });
   }
 
-  static String getConversationID(String id) => user.uid.hashCode <= id.hashCode
-      ? '${user.uid}_$id'
-      : '${id}_${user.uid}';
+  // ─── Chat ────────────────────────────────────────────────────────────────
+
+  static String getConversationID(String id) =>
+      user.uid.hashCode <= id.hashCode
+          ? '${user.uid}_$id'
+          : '${id}_${user.uid}';
 
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
       ChatUser user) {
@@ -289,7 +282,8 @@ class APIs {
     final ref = firestore
         .collection('chats/${getConversationID(chatUser.id)}/messages/');
     await ref.doc(time).set(message.toJson()).then((value) =>
-        sendPushNotification(chatUser, type == Type.text ? msg : 'image'));
+        sendPushNotification(
+            chatUser, type == Type.text ? msg : '🎵 Áudio'));
   }
 
   static Future<void> updateMessageReadStatus(Message message) async {
@@ -312,13 +306,59 @@ class APIs {
     final ext = file.path.split('.').last;
     final ref = storage.ref().child(
         'images/${getConversationID(chatUser.id)}/${DateTime.now().millisecondsSinceEpoch}.$ext');
-    await ref
-        .putFile(file, SettableMetadata(contentType: 'image/$ext'))
-        .then((p0) {
-      log('Data Transferred: ${p0.bytesTransferred / 1000} kb');
-    });
+    await ref.putFile(file, SettableMetadata(contentType: 'image/$ext'));
     final imageUrl = await ref.getDownloadURL();
     await sendMessage(chatUser, imageUrl, Type.image);
+  }
+
+  // ─── Áudio temporário ────────────────────────────────────────────────────
+
+  static Future<void> sendChatAudio(ChatUser chatUser, File file) async {
+    try {
+      final time = DateTime.now().millisecondsSinceEpoch.toString();
+      final ref = storage.ref().child(
+          'audios/${getConversationID(chatUser.id)}/$time.aac');
+      await ref.putFile(file, SettableMetadata(contentType: 'audio/aac'));
+      final audioUrl = await ref.getDownloadURL();
+      await sendMessage(chatUser, audioUrl, Type.audio);
+      log('Audio sent: $audioUrl');
+    } catch (e) {
+      log('sendChatAudioE: $e');
+    }
+  }
+
+  // Marca áudio como reproduzido e agenda deleção em 5 segundos
+  static Future<void> markAudioPlayed(Message message) async {
+    try {
+      // Atualiza isPlayed no Firestore
+      await firestore
+          .collection('chats/${getConversationID(message.fromId)}/messages/')
+          .doc(message.sent)
+          .update({'isPlayed': true});
+
+      // Aguarda 5 segundos e deleta
+      await Future.delayed(const Duration(seconds: 5));
+      await deleteAudioMessage(message);
+    } catch (e) {
+      log('markAudioPlayedE: $e');
+    }
+  }
+
+  // Deleta mensagem de áudio do Firestore e Storage
+  static Future<void> deleteAudioMessage(Message message) async {
+    try {
+      // Deleta do Firestore
+      await firestore
+          .collection('chats/${getConversationID(message.toId)}/messages/')
+          .doc(message.sent)
+          .delete();
+
+      // Deleta do Storage
+      await storage.refFromURL(message.msg).delete();
+      log('Audio deleted: ${message.sent}');
+    } catch (e) {
+      log('deleteAudioMessageE: $e');
+    }
   }
 
   static Future<void> deleteMessage(Message message) async {
@@ -326,7 +366,7 @@ class APIs {
         .collection('chats/${getConversationID(message.toId)}/messages/')
         .doc(message.sent)
         .delete();
-    if (message.type == Type.image) {
+    if (message.type == Type.image || message.type == Type.audio) {
       await storage.refFromURL(message.msg).delete();
     }
   }
