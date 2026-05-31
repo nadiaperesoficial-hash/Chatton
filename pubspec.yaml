@@ -61,16 +61,6 @@ dependencies:
   # Date Time Formatting
   intl: ^0.20.1
 
-  
-  # For microphone permission
-  permission_handler: ^11.3.1
-  
-  # For playing audio
-  just_audio: ^0.9.40
-
-  # For temporary file path
-  path_provider: ^2.1.4
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
