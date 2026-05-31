@@ -1,4 +1,8 @@
+import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../home_screen.dart';
+import '../api/apis.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -83,15 +87,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                   const SizedBox(height: 32),
                   _buildTextField(
-                      controller: _nameController,
-                      hint: 'Nome completo',
-                      icon: Icons.person_outline_rounded),
+                    controller: _nameController,
+                    hint: 'Nome completo',
+                    icon: Icons.person_outline_rounded,
+                  ),
                   const SizedBox(height: 14),
                   _buildTextField(
-                      controller: _emailController,
-                      hint: 'E-mail',
-                      icon: Icons.mail_outline_rounded,
-                      keyboardType: TextInputType.emailAddress),
+                    controller: _emailController,
+                    hint: 'E-mail',
+                    icon: Icons.mail_outline_rounded,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
                   const SizedBox(height: 14),
                   _buildTextField(
                     controller: _passwordController,
@@ -122,8 +128,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                             : Icons.visibility_outlined,
                         color: Colors.orange.shade700,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
+                      onPressed: () => setState(
+                          () => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -250,10 +256,30 @@ class _RegisterScreenState extends State<RegisterScreen>
       _showSnack('As senhas não coincidem');
       return;
     }
+    if (_passwordController.text.length < 6) {
+      _showSnack('Senha deve ter no mínimo 6 caracteres');
+      return;
+    }
     setState(() => _isLoading = true);
-    // TODO: APIs.createUserWithEmailAndPassword(email, password)
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+    try {
+      await APIs.registerWithEmail(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      await APIs.createUser();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      log('RegisterError: $e');
+      _showSnack(e.message ?? 'Erro ao criar conta');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showSnack(String msg) {
