@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../home_screen.dart';
-import '../../api/apis.dart';
+import '../api/apis.dart';
 import 'register_screen.dart';
 import 'phone_login_screen.dart';
 import 'forgot_password_screen.dart';
@@ -45,178 +45,231 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Color(0xFF075E54),
+      statusBarIconBrightness: Brightness.light,
+    ));
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFB347),
-              Color(0xFFFF6B6B),
-              Color(0xFFFF2D55),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeIn,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-                  Center(
-                    child: Container(
+      backgroundColor: Colors.white,
+      body: FadeTransition(
+        opacity: _fadeIn,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header verde
+              Container(
+                width: double.infinity,
+                color: const Color(0xFF075E54),
+                padding: const EdgeInsets.only(
+                    top: 60, bottom: 40),
+                child: Column(
+                  children: [
+                    Container(
                       width: 90,
                       height: 90,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.face_retouching_natural,
-                        size: 54,
-                        color: Color(0xFFFF2D55),
+                        Icons.chat_bubble_outline_rounded,
+                        size: 50,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Hello',
-                    style: TextStyle(
-                      fontSize: 46,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildTextField(
-                    controller: _emailController,
-                    hint: 'E-mail',
-                    icon: Icons.mail_outline_rounded,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 14),
-                  _buildTextField(
-                    controller: _passwordController,
-                    hint: 'Senha',
-                    icon: Icons.lock_outline_rounded,
-                    obscure: _obscurePassword,
-                    suffix: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: Colors.orange.shade700,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Chatton',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1,
                       ),
-                      onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => ForgotPasswordScreen()),
+                  ],
+                ),
+              ),
+
+              // Formulário
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Entrar',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF075E54),
                       ),
-                      child: const Text(
-                        'Forgot your Password?',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Email
+                    _buildTextField(
+                      controller: _emailController,
+                      hint: 'E-mail',
+                      icon: Icons.mail_outline_rounded,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Senha
+                    _buildTextField(
+                      controller: _passwordController,
+                      hint: 'Senha',
+                      icon: Icons.lock_outline_rounded,
+                      obscure: _obscurePassword,
+                      suffix: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: const Color(0xFF075E54),
                         ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildGradientButton(
-                    label: 'Sign in',
-                    onTap: _isLoading ? null : _handleEmailLogin,
-                    isLoading: _isLoading,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: Divider(
-                              color: Colors.white.withOpacity(0.5))),
-                      Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'ou continue com',
+
+                    // Esqueci senha
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => ForgotPasswordScreen()),
+                        ),
+                        child: const Text(
+                          'Esqueceu a senha?',
                           style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 13),
-                        ),
-                      ),
-                      Expanded(
-                          child: Divider(
-                              color: Colors.white.withOpacity(0.5))),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSocialButton(
-                          icon: Icons.g_mobiledata_rounded,
-                          label: 'Google',
-                          onTap: _handleGoogleLogin,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _buildSocialButton(
-                          icon: Icons.phone_outlined,
-                          label: 'Telefone',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => PhoneLoginScreen()),
+                            color: Color(0xFF075E54),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 36),
-                  Center(
-                    child: GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => RegisterScreen()),
-                      ),
-                      child: RichText(
-                        text: const TextSpan(
-                          text: "Don't have an account? ",
-                          style: TextStyle(
-                              color: Colors.black54, fontSize: 15),
-                          children: [
-                            TextSpan(
-                              text: 'Create',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Botão entrar
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed:
+                            _isLoading ? null : _handleEmailLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF075E54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : const Text(
+                                'Entrar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Divisor
+                    Row(
+                      children: [
+                        Expanded(
+                            child: Divider(
+                                color: Colors.grey.shade300)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12),
+                          child: Text(
+                            'ou continue com',
+                            style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 13),
+                          ),
+                        ),
+                        Expanded(
+                            child: Divider(
+                                color: Colors.grey.shade300)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Botões sociais
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSocialButton(
+                            icon: Icons.g_mobiledata_rounded,
+                            label: 'Google',
+                            onTap: _handleGoogleLogin,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: _buildSocialButton(
+                            icon: Icons.phone_outlined,
+                            label: 'Telefone',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      PhoneLoginScreen()),
                             ),
-                          ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // Criar conta
+                    Center(
+                      child: GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => RegisterScreen()),
+                        ),
+                        child: RichText(
+                          text: const TextSpan(
+                            text: "Não tem uma conta? ",
+                            style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 15),
+                            children: [
+                              TextSpan(
+                                text: 'Criar',
+                                style: TextStyle(
+                                  color: Color(0xFF075E54),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -233,61 +286,25 @@ class _LoginScreenState extends State<LoginScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         obscureText: obscure,
-        style: const TextStyle(fontSize: 15, color: Colors.black87),
+        style: const TextStyle(
+            fontSize: 15, color: Colors.black87),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey.shade400),
-          prefixIcon: Icon(icon, color: Colors.orange.shade600),
+          prefixIcon: Icon(icon,
+              color: const Color(0xFF075E54)),
           suffixIcon: suffix,
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGradientButton({
-    required String label,
-    VoidCallback? onTap,
-    bool isLoading = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 58,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFB347), Color(0xFFFF2D55)],
-          ),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFF2D55).withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Center(
-          child: isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20, vertical: 16),
         ),
       ),
     );
@@ -301,21 +318,22 @@ class _LoginScreenState extends State<LoginScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 52,
+        height: 50,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.25),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.6)),
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
+            Icon(icon,
+                color: const Color(0xFF075E54), size: 22),
             const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
-                color: Colors.white,
+                color: Colors.black87,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
