@@ -1,5 +1,9 @@
+import 'dart:developer';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../home_screen.dart';
+import '../api/apis.dart';
 import 'register_screen.dart';
 import 'phone_login_screen.dart';
 import 'forgot_password_screen.dart';
@@ -329,14 +333,47 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
     setState(() => _isLoading = true);
-    // TODO: APIs.loginWithEmailPassword(email, password)
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+    try {
+      await APIs.loginWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      await APIs.getSelfInfo();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      log('LoginError: $e');
+      _showSnack(e.message ?? 'Erro ao entrar');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _handleGoogleLogin() async {
-    // TODO: APIs.loginWithGoogle()
-    _showSnack('Google Sign-In em breve');
+    setState(() => _isLoading = true);
+    try {
+      final credential = await APIs.loginWithGoogle();
+      if (credential == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+      await APIs.getSelfInfo();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      log('GoogleLoginError: $e');
+      _showSnack(e.message ?? 'Erro com Google');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showSnack(String msg) {
