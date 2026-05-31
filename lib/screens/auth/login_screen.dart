@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'auth/register_screen.dart';
-import 'auth/phone_login_screen.dart';
-import 'auth/forgot_password_screen.dart';
-
-late Size mq;
+import 'register_screen.dart';
+import 'phone_login_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    mq = MediaQuery.of(context).size;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
       body: Container(
@@ -123,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen>
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen()),
+                            builder: (_) => ForgotPasswordScreen()),
                       ),
                       child: const Text(
                         'Forgot your Password?',
@@ -179,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen>
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const PhoneLoginScreen()),
+                                builder: (_) => PhoneLoginScreen()),
                           ),
                         ),
                       ),
@@ -191,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen>
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const RegisterScreen()),
+                            builder: (_) => RegisterScreen()),
                       ),
                       child: RichText(
                         text: const TextSpan(
@@ -332,13 +329,13 @@ class _LoginScreenState extends State<LoginScreen>
       return;
     }
     setState(() => _isLoading = true);
-    // TODO: chamar APIs.loginWithEmailPassword(email, password)
+    // TODO: APIs.loginWithEmailPassword(email, password)
     await Future.delayed(const Duration(seconds: 1));
     setState(() => _isLoading = false);
   }
 
   Future<void> _handleGoogleLogin() async {
-    // TODO: chamar APIs.loginWithGoogle()
+    // TODO: APIs.loginWithGoogle()
     _showSnack('Google Sign-In em breve');
   }
 
