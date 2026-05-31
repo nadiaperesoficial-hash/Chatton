@@ -50,7 +50,6 @@ dependencies:
   flutter_notification_channel: ^3.1.1
 
   # For storing images into gallery
-  # gallery_saver_updated: ^3.0.0
   gallery_saver_plus: ^3.2.8
 
   # For Playing Lottie Animation
@@ -62,27 +61,24 @@ dependencies:
   # Date Time Formatting
   intl: ^0.20.1
 
+  # For recording audio
+  record: ^5.1.2
+
+  # For playing audio
+  just_audio: ^0.9.40
+
+  # For temporary file path
+  path_provider: ^2.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  #   flutter_launcher_icons: "^0.10.0"
-
-  # flutter_icons:
-  #   android: "ic_launcher"
-  #   ios: true
-  #   image_path: "assets/images/icon.png"
-  #   min_sdk_android: 21
-  #   remove_alpha_ios: true
-
-  # For recommended coding practices
   flutter_lints: ^5.0.0
 
 flutter:
-  # For enabling material design
   uses-material-design: true
 
-  # App Assets
   assets:
     - assets/
     - assets/images/
