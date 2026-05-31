@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() => _searchList);
                     },
                   )
-                : const Text('We Chat'),
+                : const Text('Chatton'),
             actions: [
               //search user button
               IconButton(
