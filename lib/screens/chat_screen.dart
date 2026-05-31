@@ -60,11 +60,7 @@ class _ChatScreenState extends State<ChatScreen> {
             return;
           }
           Future.delayed(const Duration(milliseconds: 300), () {
-            try {
-              if (Navigator.canPop(context)) Navigator.pop(context);
-            } catch (e) {
-              log('ErrorPop: $e');
-            }
+            if (Navigator.canPop(context)) Navigator.pop(context);
           });
         },
         child: Scaffold(
@@ -128,8 +124,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     ),
-
-                  // Indicador de gravação
                   if (_isRecording)
                     Container(
                       color: Colors.white,
@@ -151,16 +145,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           Text(
                             'Solte para enviar',
                             style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 12,
-                            ),
+                                color: Colors.grey.shade500,
+                                fontSize: 12),
                           ),
                         ],
                       ),
                     ),
-
                   _chatInput(),
-
                   if (_showEmoji)
                     SizedBox(
                       height: mq.height * .35,
@@ -262,7 +253,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               child: Row(
                 children: [
-                  // Emoji
                   IconButton(
                     onPressed: () {
                       FocusScope.of(context).unfocus();
@@ -274,8 +264,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       size: 25,
                     ),
                   ),
-
-                  // Campo de texto
                   Expanded(
                     child: TextField(
                       controller: _textController,
@@ -288,13 +276,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       },
                       decoration: const InputDecoration(
                         hintText: 'Mensagem',
-                        hintStyle: TextStyle(color: Colors.black38),
+                        hintStyle:
+                            TextStyle(color: Colors.black38),
                         border: InputBorder.none,
                       ),
                     ),
                   ),
-
-                  // Galeria
                   IconButton(
                     onPressed: () async {
                       final ImagePicker picker = ImagePicker();
@@ -314,8 +301,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       size: 26,
                     ),
                   ),
-
-                  // Câmera
                   IconButton(
                     onPressed: () async {
                       final ImagePicker picker = ImagePicker();
@@ -336,24 +321,18 @@ class _ChatScreenState extends State<ChatScreen> {
                       size: 26,
                     ),
                   ),
-
                   SizedBox(width: mq.width * .01),
                 ],
               ),
             ),
           ),
-
           const SizedBox(width: 8),
-
-          // Botão enviar / microfone
           GestureDetector(
             onTap: _hasText ? _sendTextMessage : null,
-            onLongPressStart: !_hasText
-                ? (_) => _startRecording()
-                : null,
-            onLongPressEnd: !_hasText
-                ? (_) => _stopRecording()
-                : null,
+            onLongPressStart:
+                !_hasText ? (_) => _startRecording() : null,
+            onLongPressEnd:
+                !_hasText ? (_) => _stopRecording() : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 50,
@@ -394,41 +373,35 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _startRecording() async {
-    try {
-      if (await _audioRecorder.hasPermission()) {
-        final dir = await getTemporaryDirectory();
-        _recordingPath =
-            '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
-        await _audioRecorder.start(
-          const RecordConfig(encoder: AudioEncoder.aacLc),
-          path: _recordingPath!,
+    final hasPermission =
+        await _audioRecorder.hasPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Permissão de microfone negada')),
         );
-        setState(() => _isRecording = true);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'Permissão de microfone negada')),
-          );
-        }
       }
-    } catch (e) {
-      log('startRecordingE: $e');
+      return;
     }
+    final dir = await getTemporaryDirectory();
+    _recordingPath =
+        '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
+    await _audioRecorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc),
+      path: _recordingPath!,
+    );
+    setState(() => _isRecording = true);
   }
 
   Future<void> _stopRecording() async {
-    try {
-      final path = await _audioRecorder.stop();
-      setState(() => _isRecording = false);
-
-      if (path != null) {
-        final file = File(path);
-        setState(() => _isUploading = true);
-        if (_list.isEmpty) {
-          await APIs.sendFirstMessage(
-              widget.user, '', Type.audio);
-        }
-        await APIs.sendChatAudio(widget.user, file);
-        setState(() => _isUploading = false);
+    final path = await _audioRecorder.stop();
+    setState(() => _isRecording = false);
+    if (path != null) {
+      final file = File(path);
+      setState(() => _isUploading = true);
+      await APIs.sendChatAudio(widget.user, file);
+      setState(() => _isUploading = false);
+    }
+  }
+}
