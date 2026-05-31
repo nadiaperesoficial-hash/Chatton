@@ -63,6 +63,10 @@ dependencies:
 
   # For recording audio
   flutter_sound: ^9.2.13
+
+  # For microphone permission
+  permission_handler: ^11.3.1
+  
   # For playing audio
   just_audio: ^0.9.40
 
