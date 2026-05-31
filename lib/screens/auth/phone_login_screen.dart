@@ -106,12 +106,15 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
                                   )),
                               const SizedBox(width: 4),
                               Icon(Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.orange.shade700, size: 20),
+                                  color: Colors.orange.shade700,
+                                  size: 20),
                             ],
                           ),
                         ),
                         Container(
-                            width: 1, height: 28, color: Colors.grey.shade200),
+                            width: 1,
+                            height: 28,
+                            color: Colors.grey.shade200),
                         Expanded(
                           child: TextField(
                             controller: _phoneController,
@@ -186,14 +189,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
       return;
     }
     setState(() => _isLoading = true);
-    // TODO: FirebaseAuth.instance.verifyPhoneNumber(
-    //   phoneNumber: '+55$phone',
-    //   codeSent: (verificationId, _) {
-    //     Navigator.push(context, MaterialPageRoute(
-    //       builder: (_) => OtpScreen(verificationId: verificationId),
-    //     ));
-    //   },
-    // );
     await Future.delayed(const Duration(seconds: 1));
     setState(() => _isLoading = false);
     if (mounted) {
@@ -209,4 +204,177 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen>
 
 class OtpScreen extends StatefulWidget {
   final String verificationId;
-  const OtpScreen({super.key, required
+  const OtpScreen({super.key, required this.verificationId});
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  final List<TextEditingController> _controllers =
+      List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes =
+      List.generate(6, (_) => FocusNode());
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    for (final c in _controllers) c.dispose();
+    for (final f in _focusNodes) f.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFB347),
+              Color(0xFFFF6B6B),
+              Color(0xFFFF2D55),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Colors.black54),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Código\nRecebido?',
+                  style: TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                    letterSpacing: -1,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Digite os 6 dígitos enviados por SMS.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(6, (i) => _buildOtpBox(i)),
+                ),
+                const SizedBox(height: 36),
+                GestureDetector(
+                  onTap: _isLoading ? null : _verifyCode,
+                  child: Container(
+                    height: 58,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFB347), Color(0xFFFF2D55)],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF2D55).withOpacity(0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white)
+                          : const Text(
+                              'Verificar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Reenviar código',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOtpBox(int index) {
+    return SizedBox(
+      width: 46,
+      height: 56,
+      child: TextField(
+        controller: _controllers[index],
+        focusNode: _focusNodes[index],
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        maxLength: 1,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        decoration: InputDecoration(
+          counterText: '',
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        onChanged: (val) {
+          if (val.isNotEmpty && index < 5) {
+            _focusNodes[index + 1].requestFocus();
+          } else if (val.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _verifyCode() async {
+    final code = _controllers.map((c) => c.text).join();
+    if (code.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Digite os 6 dígitos')),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() => _isLoading = false);
+  }
+}
