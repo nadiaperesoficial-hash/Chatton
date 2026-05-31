@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 import '../api/apis.dart';
 import '../helper/my_date_util.dart';
@@ -16,7 +18,6 @@ import 'view_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final ChatUser user;
-
   const ChatScreen({super.key, required this.user});
 
   @override
@@ -27,6 +28,25 @@ class _ChatScreenState extends State<ChatScreen> {
   List<Message> _list = [];
   final _textController = TextEditingController();
   bool _showEmoji = false, _isUploading = false;
+  bool _isRecording = false;
+  bool _hasText = false;
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  String? _recordingPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController.addListener(() {
+      setState(() => _hasText = _textController.text.isNotEmpty);
+    });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _audioRecorder.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,12 +73,8 @@ class _ChatScreenState extends State<ChatScreen> {
             backgroundColor: const Color(0xFF075E54),
             flexibleSpace: _appBar(),
           ),
-
-          // Fundo estilo WhatsApp
           body: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFECE5DD),
-            ),
+            color: const Color(0xFFECE5DD),
             child: SafeArea(
               child: Column(
                 children: [
@@ -78,7 +94,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                         Message.fromJson(e.data()))
                                     .toList() ??
                                 [];
-
                             if (_list.isNotEmpty) {
                               return ListView.builder(
                                 reverse: true,
@@ -93,17 +108,14 @@ class _ChatScreenState extends State<ChatScreen> {
                               );
                             } else {
                               return const Center(
-                                child: Text(
-                                  'Say Hii! 👋',
-                                  style: TextStyle(fontSize: 20),
-                                ),
+                                child: Text('Say Hii! 👋',
+                                    style: TextStyle(fontSize: 20)),
                               );
                             }
                         }
                       },
                     ),
                   ),
-
                   if (_isUploading)
                     const Align(
                       alignment: Alignment.centerRight,
@@ -114,6 +126,36 @@ class _ChatScreenState extends State<ChatScreen> {
                           strokeWidth: 2,
                           color: Color(0xFF075E54),
                         ),
+                      ),
+                    ),
+
+                  // Indicador de gravação
+                  if (_isRecording)
+                    Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.mic,
+                              color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Gravando...',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Solte para enviar',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -139,14 +181,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _appBar() {
     return SafeArea(
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) =>
-                    ViewProfileScreen(user: widget.user)),
-          );
-        },
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => ViewProfileScreen(user: widget.user)),
+        ),
         child: StreamBuilder(
           stream: APIs.getUserInfo(widget.user),
           builder: (context, snapshot) {
@@ -155,7 +194,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     ?.map((e) => ChatUser.fromJson(e.data()))
                     .toList() ??
                 [];
-
             return Row(
               children: [
                 IconButton(
@@ -196,9 +234,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               context: context,
                               lastActive: widget.user.lastActive),
                       style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white70,
-                      ),
+                          fontSize: 13, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -247,13 +283,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       maxLines: null,
                       onTap: () {
                         if (_showEmoji) {
-                          setState(() => _showEmoji = !_showEmoji);
+                          setState(() => _showEmoji = false);
                         }
                       },
                       decoration: const InputDecoration(
                         hintText: 'Mensagem',
-                        hintStyle:
-                            TextStyle(color: Colors.black38),
+                        hintStyle: TextStyle(color: Colors.black38),
                         border: InputBorder.none,
                       ),
                     ),
@@ -267,7 +302,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           await picker.pickMultiImage(
                               imageQuality: 70);
                       for (var i in images) {
-                        log('Image Path: ${i.path}');
                         setState(() => _isUploading = true);
                         await APIs.sendChatImage(
                             widget.user, File(i.path));
@@ -290,7 +324,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         imageQuality: 70,
                       );
                       if (image != null) {
-                        log('Image Path: ${image.path}');
                         setState(() => _isUploading = true);
                         await APIs.sendChatImage(
                             widget.user, File(image.path));
@@ -312,35 +345,31 @@ class _ChatScreenState extends State<ChatScreen> {
 
           const SizedBox(width: 8),
 
-          // Botão enviar
+          // Botão enviar / microfone
           GestureDetector(
-            onTap: () {
-              if (_textController.text.isNotEmpty) {
-                if (_list.isEmpty) {
-                  APIs.sendFirstMessage(
-                    widget.user,
-                    _textController.text,
-                    Type.text,
-                  );
-                } else {
-                  APIs.sendMessage(
-                    widget.user,
-                    _textController.text,
-                    Type.text,
-                  );
-                }
-                _textController.text = '';
-              }
-            },
-            child: Container(
+            onTap: _hasText ? _sendTextMessage : null,
+            onLongPressStart: !_hasText
+                ? (_) => _startRecording()
+                : null,
+            onLongPressEnd: !_hasText
+                ? (_) => _stopRecording()
+                : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               width: 50,
               height: 50,
-              decoration: const BoxDecoration(
-                color: Color(0xFF075E54),
+              decoration: BoxDecoration(
+                color: _isRecording
+                    ? Colors.red
+                    : const Color(0xFF075E54),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.send_rounded,
+              child: Icon(
+                _hasText
+                    ? Icons.send_rounded
+                    : _isRecording
+                        ? Icons.mic
+                        : Icons.mic_none_rounded,
                 color: Colors.white,
                 size: 24,
               ),
@@ -350,4 +379,56 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-}
+
+  void _sendTextMessage() {
+    if (_textController.text.isNotEmpty) {
+      if (_list.isEmpty) {
+        APIs.sendFirstMessage(
+            widget.user, _textController.text, Type.text);
+      } else {
+        APIs.sendMessage(
+            widget.user, _textController.text, Type.text);
+      }
+      _textController.text = '';
+    }
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      if (await _audioRecorder.hasPermission()) {
+        final dir = await getTemporaryDirectory();
+        _recordingPath =
+            '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.aac';
+        await _audioRecorder.start(
+          const RecordConfig(encoder: AudioEncoder.aacLc),
+          path: _recordingPath!,
+        );
+        setState(() => _isRecording = true);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Permissão de microfone negada')),
+          );
+        }
+      }
+    } catch (e) {
+      log('startRecordingE: $e');
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final path = await _audioRecorder.stop();
+      setState(() => _isRecording = false);
+
+      if (path != null) {
+        final file = File(path);
+        setState(() => _isUploading = true);
+        if (_list.isEmpty) {
+          await APIs.sendFirstMessage(
+              widget.user, '', Type.audio);
+        }
+        await APIs.sendChatAudio(widget.user, file);
+        setState(() => _isUploading = false);
