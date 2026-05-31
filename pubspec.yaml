@@ -62,7 +62,7 @@ dependencies:
   intl: ^0.20.1
 
   # For recording audio
-  record: ^5.1.2
+  flutter_sound: ^9.2.13
   # For playing audio
   just_audio: ^0.9.40
 
