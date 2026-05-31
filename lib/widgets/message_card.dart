@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
-import 'package:just_audio/just_audio.dart';
 
 import '../api/apis.dart';
 import '../helper/dialogs.dart';
@@ -21,82 +20,6 @@ class MessageCard extends StatefulWidget {
 }
 
 class _MessageCardState extends State<MessageCard> {
-  AudioPlayer? _audioPlayer;
-  bool _isPlaying = false;
-  bool _isLoading = false;
-  Duration _duration = Duration.zero;
-  Duration _position = Duration.zero;
-  bool _played = false;
-
-  @override
-  void dispose() {
-    _audioPlayer?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _playAudio() async {
-    if (_isLoading) return;
-
-    try {
-      setState(() => _isLoading = true);
-
-      _audioPlayer ??= AudioPlayer();
-
-      if (_isPlaying) {
-        await _audioPlayer!.pause();
-        setState(() => _isPlaying = false);
-        return;
-      }
-
-      await _audioPlayer!.setUrl(widget.message.msg);
-
-      _duration = _audioPlayer!.duration ?? Duration.zero;
-
-      _audioPlayer!.positionStream.listen((pos) {
-        if (mounted) setState(() => _position = pos);
-      });
-
-      _audioPlayer!.playerStateStream.listen((state) {
-        if (state.processingState == ProcessingState.completed) {
-          if (mounted) {
-            setState(() {
-              _isPlaying = false;
-              _position = Duration.zero;
-            });
-
-            // Marca como reproduzido e agenda deleção em 5s
-            if (!_played) {
-              _played = true;
-              final isMe =
-                  APIs.user.uid == widget.message.fromId;
-              if (!isMe) {
-                APIs.markAudioPlayed(widget.message);
-              }
-            }
-          }
-        }
-      });
-
-      await _audioPlayer!.play();
-      setState(() {
-        _isPlaying = true;
-        _isLoading = false;
-      });
-    } catch (e) {
-      log('playAudioE: $e');
-      setState(() {
-        _isLoading = false;
-        _isPlaying = false;
-      });
-    }
-  }
-
-  String _formatDuration(Duration d) {
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
   @override
   Widget build(BuildContext context) {
     bool isMe = APIs.user.uid == widget.message.fromId;
@@ -110,7 +33,6 @@ class _MessageCardState extends State<MessageCard> {
     if (widget.message.read.isEmpty) {
       APIs.updateMessageReadStatus(widget.message);
     }
-
     return Padding(
       padding: EdgeInsets.symmetric(
           horizontal: mq.width * .03, vertical: mq.height * .005),
@@ -232,10 +154,9 @@ class _MessageCardState extends State<MessageCard> {
       case Type.text:
         return Text(
           widget.message.msg,
-          style:
-              const TextStyle(fontSize: 15, color: Colors.black87),
+          style: const TextStyle(
+              fontSize: 15, color: Colors.black87),
         );
-
       case Type.image:
         return ClipRRect(
           borderRadius: BorderRadius.circular(10),
@@ -253,107 +174,21 @@ class _MessageCardState extends State<MessageCard> {
                 const Icon(Icons.image, size: 70),
           ),
         );
-
       case Type.audio:
-        return _buildAudioPlayer();
-    }
-  }
-
-  Widget _buildAudioPlayer() {
-    final bool isMe = APIs.user.uid == widget.message.fromId;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Botão play/pause
-        GestureDetector(
-          onTap: _playAudio,
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isMe
-                  ? const Color(0xFF075E54)
-                  : const Color(0xFF075E54),
-              shape: BoxShape.circle,
-            ),
-            child: _isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-          ),
-        ),
-        const SizedBox(width: 8),
-
-        // Barra de progresso + duração
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: mq.width * .35,
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 6),
-                  overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 12),
-                  trackHeight: 3,
-                ),
-                child: Slider(
-                  value: _duration.inMilliseconds > 0
-                      ? _position.inMilliseconds
-                              .toDouble()
-                              .clamp(
-                                  0,
-                                  _duration.inMilliseconds
-                                      .toDouble())
-                      : 0,
-                  min: 0,
-                  max: _duration.inMilliseconds > 0
-                      ? _duration.inMilliseconds.toDouble()
-                      : 1,
-                  activeColor: const Color(0xFF075E54),
-                  inactiveColor: Colors.grey.shade300,
-                  onChanged: (value) async {
-                    await _audioPlayer?.seek(
-                      Duration(milliseconds: value.toInt()),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Text(
-                _isPlaying || _position.inSeconds > 0
-                    ? _formatDuration(_position)
-                    : _formatDuration(_duration),
-                style: const TextStyle(
-                    fontSize: 11, color: Colors.black45),
-              ),
+            const Icon(Icons.mic,
+                color: Color(0xFF075E54), size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Mensagem de voz',
+              style: TextStyle(
+                  fontSize: 14, color: Colors.black54),
             ),
           ],
-        ),
-
-        const SizedBox(width: 4),
-
-        // Ícone de microfone
-        Icon(
-          Icons.mic,
-          color: Colors.grey.shade500,
-          size: 18,
-        ),
-      ],
-    );
+        );
+    }
   }
 
   void _showBottomSheet(bool isMe) {
@@ -376,7 +211,8 @@ class _MessageCardState extends State<MessageCard> {
                   horizontal: mq.width * .4),
               decoration: const BoxDecoration(
                 color: Colors.grey,
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+                borderRadius:
+                    BorderRadius.all(Radius.circular(8)),
               ),
             ),
             if (widget.message.type == Type.text)
@@ -385,12 +221,13 @@ class _MessageCardState extends State<MessageCard> {
                     color: Color(0xFF075E54), size: 26),
                 name: 'Copiar texto',
                 onTap: (ctx) async {
-                  await Clipboard.setData(
-                          ClipboardData(text: widget.message.msg))
+                  await Clipboard.setData(ClipboardData(
+                          text: widget.message.msg))
                       .then((value) {
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
-                      Dialogs.showSnackbar(ctx, 'Texto copiado!');
+                      Dialogs.showSnackbar(
+                          ctx, 'Texto copiado!');
                     }
                   });
                 },
@@ -431,7 +268,9 @@ class _MessageCardState extends State<MessageCard> {
                     color: Color(0xFF075E54), size: 26),
                 name: 'Editar mensagem',
                 onTap: (ctx) {
-                  if (ctx.mounted) _showMessageUpdateDialog(ctx);
+                  if (ctx.mounted) {
+                    _showMessageUpdateDialog(ctx);
+                  }
                 },
               ),
             if (isMe)
@@ -482,10 +321,12 @@ class _MessageCardState extends State<MessageCard> {
         contentPadding: const EdgeInsets.only(
             left: 24, right: 24, top: 20, bottom: 10),
         shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(20))),
+            borderRadius:
+                BorderRadius.all(Radius.circular(20))),
         title: const Row(
           children: [
-            Icon(Icons.edit, color: Color(0xFF075E54), size: 28),
+            Icon(Icons.edit,
+                color: Color(0xFF075E54), size: 28),
             Text(' Editar mensagem'),
           ],
         ),
@@ -529,7 +370,9 @@ class _OptionItem extends StatelessWidget {
   final Function(BuildContext) onTap;
 
   const _OptionItem(
-      {required this.icon, required this.name, required this.onTap});
+      {required this.icon,
+      required this.name,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
