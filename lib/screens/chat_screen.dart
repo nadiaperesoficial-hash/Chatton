@@ -1,13 +1,9 @@
-import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mic_stream/mic_stream.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../api/apis.dart';
 import '../helper/my_date_util.dart';
@@ -30,12 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   List<Message> _list = [];
   final _textController = TextEditingController();
   bool _showEmoji = false, _isUploading = false;
-  bool _isRecording = false;
   bool _hasText = false;
-  StreamSubscription<Uint8List>? _micSubscription;
-  IOSink? _fileSink;
-  String? _recordingPath;
-  final List<Uint8List> _audioChunks = [];
 
   @override
   void initState() {
@@ -48,8 +39,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _micSubscription?.cancel();
-    _fileSink?.close();
     super.dispose();
   }
 
@@ -127,33 +116,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           strokeWidth: 2,
                           color: Color(0xFF075E54),
                         ),
-                      ),
-                    ),
-                  if (_isRecording)
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.mic,
-                              color: Colors.red, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Gravando...',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            'Solte para enviar',
-                            style: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: 12),
-                          ),
-                        ],
                       ),
                     ),
                   _chatInput(),
@@ -334,26 +296,20 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: _hasText ? _sendTextMessage : null,
-            onLongPressStart:
-                !_hasText ? (_) => _startRecording() : null,
-            onLongPressEnd:
-                !_hasText ? (_) => _stopRecording() : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: _isRecording
-                    ? Colors.red
-                    : const Color(0xFF075E54),
+                color: _hasText
+                    ? const Color(0xFF075E54)
+                    : Colors.grey.shade400,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _hasText
                     ? Icons.send_rounded
-                    : _isRecording
-                        ? Icons.mic
-                        : Icons.mic_none_rounded,
+                    : Icons.mic_none_rounded,
                 color: Colors.white,
                 size: 24,
               ),
@@ -374,73 +330,6 @@ class _ChatScreenState extends State<ChatScreen> {
             widget.user, _textController.text, Type.text);
       }
       _textController.text = '';
-    }
-  }
-
-  Future<void> _startRecording() async {
-    try {
-      _audioChunks.clear();
-      final dir = await getTemporaryDirectory();
-      _recordingPath =
-          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}.pcm';
-
-      final stream = await MicStream.microphone(
-        sampleRate: 16000,
-        channelConfig: ChannelConfig.CHANNEL_IN_MONO,
-        audioFormat: AudioFormat.ENCODING_PCM_16BIT,
-      );
-
-      if (stream == null) {
-        log('Mic stream null');
-        return;
-      }
-
-      _fileSink = File(_recordingPath!).openWrite();
-      _micSubscription = stream.listen((data) {
-        _audioChunks.add(data);
-        _fileSink?.add(data);
-      });
-
-      setState(() => _isRecording = true);
-      log('Recording started: $_recordingPath');
-    } catch (e) {
-      log('startRecordingError: $e');
-    }
-  }
-
-  Future<void> _stopRecording() async {
-    try {
-      await _micSubscription?.cancel();
-      await _fileSink?.close();
-      _micSubscription = null;
-      _fileSink = null;
-      setState(() => _isRecording = false);
-
-      if (_recordingPath == null) return;
-
-      final file = File(_recordingPath!);
-      if (!await file.exists()) {
-        log('File not found');
-        return;
-      }
-
-      final size = await file.length();
-      log('Audio size: $size bytes');
-      if (size < 1000) {
-        log('Audio too short');
-        return;
-      }
-
-      setState(() => _isUploading = true);
-      await APIs.sendChatAudio(widget.user, file);
-      setState(() => _isUploading = false);
-      log('Audio sent');
-    } catch (e) {
-      log('stopRecordingError: $e');
-      setState(() {
-        _isRecording = false;
-        _isUploading = false;
-      });
     }
   }
 }
