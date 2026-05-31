@@ -62,7 +62,7 @@ dependencies:
   intl: ^0.20.1
 
   # For recording audio
-  record: ^4.4.4
+  mic_stream: ^0.6.2
   
   # For microphone permission
   permission_handler: ^11.3.1
